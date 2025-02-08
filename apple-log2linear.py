@@ -5,19 +5,15 @@ import numpy as np
 import cv2
 import shutil
 import argparse
+import concurrent.futures
 
 def apple_log_decode(P):
     """
     Decode Apple Log-encoded pixel values into linear reflectance R.
     P can be a scalar or NumPy array (float32 or float64).
 
-    Parameters from the Apple Log White Paper:
-      R0     = -0.05641088
-      RI     =  0.01
-      c      = 47.28711236
-      beta   = 0.00964052
-      gamma  = 0.08550479
-      delta  = 0.69336945
+    The parameters (R0, RI, c, beta, gamma, delta) come from Apple's
+    publicly available Apple Log White Paper.
     """
     R0     = -0.05641088
     RI     =  0.01
@@ -40,15 +36,62 @@ def apple_log_decode(P):
     
     return R
 
+def decode_and_save(
+    arr, frame_idx,
+    images_32bit_dir,
+    images_16bit_dir,
+    images_8bit_dir
+):
+    """
+    Decode Apple Log frame to linear, then save 32-bit EXR, 16-bit PNG,
+    and 8-bit gamma-corrected PNG. The input 'arr' is already read
+    as a 16-bit NumPy array (H,W,3) in [0..65535].
+    """
+
+    # Convert to float range [0,1]
+    arr_float = arr.astype(np.float32) / 65535.0
+    arr_lin = apple_log_decode(arr_float)
+
+    # 32-bit EXR
+    out_exr_path = os.path.join(images_32bit_dir, f'{frame_idx:06d}.exr')
+    cv2.imwrite(out_exr_path, arr_lin[:, :, ::-1])  # BGR in OpenCV
+
+    # 16-bit PNG (clamped to [0,65535])
+    arr_lin_16 = (np.clip(arr_lin, 0.0, 1.0) * 65535.0).astype(np.uint16)
+    out_16bit_path = os.path.join(images_16bit_dir, f'{frame_idx:06d}.png')
+    cv2.imwrite(out_16bit_path, arr_lin_16[:, :, ::-1])
+
+    # 8-bit gamma-corrected PNG
+    gamma = 2.2
+    arr_lin_gamma = np.power(np.clip(arr_lin, 0.0, 1.0), 1.0 / gamma)
+    arr_lin_8 = (arr_lin_gamma * 255.0).astype(np.uint8)
+    out_8bit_path = os.path.join(images_8bit_dir, f'{frame_idx:06d}.png')
+    cv2.imwrite(out_8bit_path, arr_lin_8[:, :, ::-1])
+
+def count_extractable_frames(container, step):
+    """
+    Returns how many frames in 'container' will be extracted
+    if we skip frames according to 'step' (i.e. we only keep
+    frames where global_frame_index % step == 0).
+    """
+    count = 0
+    global_frame_index = 0
+    for packet in container.demux():
+        if packet.stream.type == 'video':
+            for _ in packet.decode():
+                # This is the same skip logic used in the main function
+                if global_frame_index % step == 0:
+                    count += 1
+                global_frame_index += 1
+    return count
+
 def process_apple_log_video(base_dir, mov_filename, step):
     """
-    Process the given Apple Log MOV file, decode it to linear,
-    and save both 16-bit linear PNGs and gamma-corrected 8-bit PNGs for COLMAP.
-
-    base_dir    : The base directory to place the 'tmp/images-16bit' and
-                  'tmp/images-8bit' folders.
-    mov_filename: The name of the .mov file (including extension).
-    step  : The number of frames to skip between saved frames.
+    - First, do a quick pass to see if the total # of extracted frames
+      (with skipping) is < 10.
+    - If < 10, just collect them all in memory in one pass, then save them
+      at once.
+    - Otherwise, keep a batch size of 10 frames for parallel saving.
     """
 
     # Construct paths
@@ -58,74 +101,103 @@ def process_apple_log_video(base_dir, mov_filename, step):
     images_8bit_dir  = os.path.join(tmp_dir, 'images')
 
     # Delete directories if they exist
-    if os.path.exists(images_16bit_dir):
-        shutil.rmtree(images_16bit_dir)
-    if os.path.exists(images_8bit_dir):
-        shutil.rmtree(images_8bit_dir)
-    if os.path.exists(images_32bit_dir):
-        shutil.rmtree(images_32bit_dir)
+    for d in (images_32bit_dir, images_16bit_dir, images_8bit_dir):
+        if os.path.exists(d):
+            shutil.rmtree(d)
 
     # Create directories
+    os.makedirs(images_32bit_dir, exist_ok=True)
     os.makedirs(images_16bit_dir, exist_ok=True)
     os.makedirs(images_8bit_dir,  exist_ok=True)
-    os.makedirs(images_32bit_dir,  exist_ok=True)
 
-    # Open the MOV container
     mov_path = os.path.join(base_dir, mov_filename)
+
+    # -----------------------------------
+    # 1) Count how many frames we'll extract
+    #    (One pass over the container)
+    # -----------------------------------
+    print(f"Counting extractable frames with temporal downsample of {step}")
     container = av.open(mov_path)
+    total_extractable = count_extractable_frames(container, step)
+    container.close()  # close after counting
+    print(f"Total frames after temporal downsample is {total_extractable}")
 
+    # -----------------------------------
+    # 2) Now we reopen & do the real pass
+    # -----------------------------------
+    container = av.open(mov_path)
     global_frame_index = 0
-    frame_index = 0
-    for packet in container.demux():
-        # Only process packets from the video stream
-        if packet.stream.type == 'video':
-            for frame in packet.decode():
+    saved_frame_index = 0
 
-                if global_frame_index % step == 0:
-                    # Reformat to RGB48LE (16-bit)
-                    rgb_frame = frame.reformat(format='rgb48le')
-                    arr = rgb_frame.to_ndarray()  # (H, W, 3), dtype=uint16
+    frames_buffer = []
+    batch_size = 10
 
-                    # Convert to float range [0,1]
-                    arr_float = arr.astype(np.float32) / 65535.0
-                    # Apple Log decode to linear
-                    arr_lin = apple_log_decode(arr_float)
-                    
-                    # save unclipped 32 bit linear exr with opencv
-                    out_exr_path = os.path.join(images_32bit_dir,
-                                                f'{frame_index:06d}.exr')
-                    cv2.imwrite(out_exr_path, arr_lin[:, :, ::-1])
+    # We'll gather frames in memory for final processing
+    # if total_extractable < 10; otherwise, we do batch logic.
+    use_batching = (total_extractable >= 10)
 
-                    # save 16-bit linear
-                    # scale back up to [0,65535]
-                    arr_lin_16 = (np.clip(arr_lin, 0.0, 1.0) * 65535.0).astype(np.uint16)
-                    # OpenCV uses BGR order, so flip color channels
-                    out_16bit_path = os.path.join(images_16bit_dir,
-                                                f'{frame_index:06d}.png')
-                    cv2.imwrite(out_16bit_path, arr_lin_16[:, :, ::-1])
+    # ThreadPoolExecutor for parallel decode_and_save
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for packet in container.demux():
+            if packet.stream.type == 'video':
+                for frame in packet.decode():
+                    if global_frame_index % step == 0:
+                        # Convert to 16-bit from the original
+                        rgb_frame = frame.reformat(format='rgb48le')
+                        arr = rgb_frame.to_ndarray()  # (H, W, 3), dtype=uint16
 
-                    # save 8-bit gamma-corrected 
-                    gamma = 2.2
-                    arr_lin_gamma = np.power(np.clip(arr_lin, 0.0, 1.0), 1.0 / gamma)
-                    arr_lin_8 = (arr_lin_gamma * 255.0).astype(np.uint8)
-                    out_8bit_path = os.path.join(images_8bit_dir,
-                                                f'{frame_index:06d}.png')
-                    cv2.imwrite(out_8bit_path, arr_lin_8[:, :, ::-1])
+                        frames_buffer.append((arr, saved_frame_index))
+                        saved_frame_index += 1
 
-                    frame_index += 1
+                        # If we are batching and we've hit batch_size, flush
+                        if use_batching and (len(frames_buffer) == batch_size):
+                            futures = []
+                            for arr_, idx_ in frames_buffer:
+                                futures.append(
+                                    executor.submit(
+                                        decode_and_save,
+                                        arr_, idx_,
+                                        images_32bit_dir, images_16bit_dir, images_8bit_dir
+                                    )
+                                )
+                            concurrent.futures.wait(futures)
+                            frames_buffer.clear()
 
-                global_frame_index += 1
+                        # Periodically print progress
+                        if saved_frame_index % 10 == 0:
+                            print(f"Processed {saved_frame_index} of {total_extractable} frames...")
 
-    print(f"Finished processing {frame_index} frames.")
+                    global_frame_index += 1
+
+        # End of container. 
+        # If anything remains in frames_buffer, process it now
+        if frames_buffer:
+            futures = []
+            for arr_, idx_ in frames_buffer:
+                futures.append(
+                    executor.submit(
+                        decode_and_save,
+                        arr_, idx_,
+                        images_32bit_dir, images_16bit_dir, images_8bit_dir
+                    )
+                )
+            concurrent.futures.wait(futures)
+            frames_buffer.clear()
+
+    container.close()
+    print(f"Finished processing {saved_frame_index} frames.")
     print(f"32-bit frames in: {images_32bit_dir}")
     print(f"16-bit frames in: {images_16bit_dir}")
     print(f"8-bit frames in:  {images_8bit_dir}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process an Apple Log-encoded .mov video')
-    parser.add_argument('--base_directory', type=str, help='Base directory to create output folders')
-    parser.add_argument('--mov_file', type=str, help='Name of the .mov file (including extension)')
-    parser.add_argument('--step', type=int, default=5, help='Video temporal downsampling factor')
-    args = parser.parse_args() 
+    parser.add_argument('--base_directory', type=str, required=True,
+                        help='Base directory to create output folders')
+    parser.add_argument('--mov_file', type=str, required=True,
+                        help='Name of the .mov file (including extension)')
+    parser.add_argument('--step', type=int, default=5,
+                        help='Video temporal downsampling factor')
+    args = parser.parse_args()
     process_apple_log_video(args.base_directory, args.mov_file, args.step)
-
