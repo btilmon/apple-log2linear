@@ -1,10 +1,11 @@
-# apple-log2linear
+
+<p align="center">
+  <img src="2001.jpg" width="300"/>
+</p>
+
 
 Convert Apple ProRes Log video to calibrated 10 bit linear RGB images. Apple ProRes Log video format captures minimally processed 10 bit HDR video up to 4K 30FPS on iPhone 15 and 16 Pros. The videos are radiometrically and geometrically calibrated by Apple on device. This makes ProRes Log video one of the easiest ways to get film quality calibrated video for photogrammetry, radiance fields, and so on without needing a full frame camera and manual calibrations. Apple promises that after decoding from log to linear, the image values represent linear scene reflectance, which is usually hard to get on iPhones due to all the computational photography processing. This repo implements the log to linear decoding based on the Apple Log Profile white paper, which is included in the repo [here](Apple_Log_Profile_White_Paper.pdf).
 
-<p align="center">
-  <img src="comparison.png" />
-</p>
 
 
 ## How to turn on ProRes Log video format
@@ -35,3 +36,6 @@ The data is saved to 3 folders inside the generated `tmp` folder:
 * `images-16bit` - 16 bit PNG with clipped linear 10 bit data for ease of use
 * `images-32bit` - 32 bit EXR with unclipped linear 10 bit data for maximum fidelity
 
+<p align="center">
+  <img src="comparison.png" />
+</p>
