@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="2001.jpg" width="300"/>
+  <img src="2001.jpg" width="250"/>
 </p>
 
 
