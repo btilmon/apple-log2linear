@@ -12,8 +12,8 @@ Convert Apple ProRes Log video to calibrated 10 bit linear RGB images. Apple Pro
 
 Go to `Settings->Camera->Formats` and at the bottom turn on Apple ProRes and select Log from ProRes Encoding. When you open the camera app, you should see `ProRes LOG` in the top left if it is on. At 4K 30FPS, a 1 minute video is around 6GB. 
 
-## Extra capture steps for improved radiometry
-* Hold down on the screen when the camera app is open and the `AE/AF` will lock, which locks the auto exposure and auto focus. Unfortunately it is not possible to lock one of focus or exposure, they both have to be locked. Using the 0.5x ultrawide camera has the largest depth of field which helps prevent being out of focus when locking. Scrolling down on the exposure slider will decrease motion blur by shortening exposure. I find it beneficial to deliberately underexpose for most scenes, there is usually enough signal and it decreases motion blur. 
+## Recommended steps for improved radiometry
+* Use the 0.5x ultrawide camera with locked autoexposure and locked autofocus while underexposing to prevent motion blur: hold down on the screen when the camera app is open and the `AE/AF` will lock, which locks the auto exposure and auto focus. Unfortunately it is not possible to lock one of focus or exposure, they both have to be locked. Using the 0.5x ultrawide camera has the largest depth of field which helps prevent being out of focus when locking. Scrolling down on the exposure slider will decrease motion blur by shortening exposure. I find it beneficial to deliberately underexpose for most scenes, there is usually enough signal and it decreases motion blur. 
 * Turn on `Lock Camera` and `Lock White Balance` in `Settings->Camera->Record Video`
 * Turn on `Lens Correction` in `Settings->Camera` for undistortion
   
