@@ -39,7 +39,7 @@ Non standard dependencies to install:
 * `pip install av`
 * `pip install opencv-python`
 
-1. Download the .MOV file from your phone to your computer, I usually transfer from my phone to google drive to my computer. A sample video is provided.
+Capture the video and then download the .MOV file from your phone to your computer. It is fastest to transfer over usb wire but google drive can be used at slower speed. A sample video is provided.
 
 ```bash
 python apple-log2linear.py --base_directory . --mov_file IMG_2910.MOV --step 5
