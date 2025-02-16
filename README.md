@@ -9,7 +9,7 @@ Convert Apple ProRes Log video to calibrated 10 bit linear RGB images. Apple Pro
 ## Applications
 
 <p align="center">Bypass Apple's computational photography for improved radiometry:</p>
-<p align="center">(less denoising, sharpening, color correction, and other undocumented processing)</p>
+<p align="center">(less denoising, sharpening, color correction, and other undocumented processing), zoom in for details</p>
 
 <p align="center">
   <img src="assets/processing.png" />
