@@ -40,7 +40,7 @@ Go to `Settings->Camera->Formats` and at the bottom turn on Apple ProRes and sel
 ## Optional Color Correction
 Per the white paper, the images are in Linear REC.2020 after decoding. If you want more visually appealing images, at the expense of a compressed color range, use `--apply_ccm` to convert from Linear Rec.2020 to Linear Rec.709. The 8 bit images will still have gamma correction applied to them. Here is the difference between the two:
  <p align="center">
-  <img src="assets/ccm.png" width="800px"/>
+  <img src="assets/ccm.png"/>
 </p>
 
   
