@@ -216,15 +216,15 @@ def process_apple_log_video(base_dir, mov_filename, step, batch_size,color_corre
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process an Apple Log-encoded .mov video')
     parser.add_argument('--base_directory', type=str, required=True,
-                        help='Base directory to create output folders')
+                        help='Video should be here and outputs are saved here.')
     parser.add_argument('--mov_file', type=str, required=True,
-                        help='Name of the .mov file (including extension)')
+                        help='Name of the log encoded .mov file.')
     parser.add_argument('--step', type=int, default=10,
-                        help='Video temporal downsampling factor')
+                        help='Video temporal downsampling factor.')
     parser.add_argument('--batch_size', type=int, default=30,
-                        help='Number of frames to process in parallel')
+                        help='Number of frames to process in parallel.')
     parser.add_argument('--apply_ccm', action='store_true',
-                        help='Apply color correction?')
+                        help='Apply color correction.')
 
     args = parser.parse_args()
 
