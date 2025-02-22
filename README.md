@@ -36,6 +36,13 @@ Go to `Settings->Camera->Formats` and at the bottom turn on Apple ProRes and sel
 * Use the 0.5x ultrawide camera with locked auto exposure and locked auto focus while underexposing to prevent motion blur. To do this, hold down on the screen when the camera app is open and the `AE/AF` will lock, which locks the auto exposure and auto focus. Unfortunately it is not possible to lock one of focus or exposure, they both have to be locked. Using the 0.5x ultrawide camera has the largest depth of field which helps prevent being out of focus when locking. Scrolling down on the exposure slider will decrease motion blur by shortening exposure. I find it beneficial to deliberately underexpose for most scenes, there is usually enough signal and it decreases motion blur. 
 * Turn on `Lock Camera` and `Lock White Balance` in `Settings->Camera->Record Video`
 * Turn on `Lens Correction` in `Settings->Camera` for undistortion
+
+## Optional Color Correction
+Per the white paper, the images are in Linear REC.2020 after decoding. If you want more visually appealing images, at the expense of a compressed color range, use `--apply_ccm` to convert from Linear Rec.2020 to Linear Rec.709. The 8 bit images will still have gamma correction applied to them. Here is the difference between the two:
+ <p align="center">
+  <img src="assets/ccm.png" width="800px"/>
+</p>
+
   
 ## Instructions
 
@@ -46,10 +53,13 @@ Non standard dependencies to install:
 Capture the video and then download the .MOV file from your phone to your computer. It is fastest to transfer over usb wire but google drive can be used at slower speed. A sample video is provided.
 
 ```bash
-python apple-log2linear.py --base_directory . --mov_file IMG_2910.MOV --step 5
+python apple-log2linear.py --base_directory . --mov_file IMG_2910.MOV 
 ```
 
-```step``` temporally downsamples the video for faster processing.
+Run the following to see all command line options:
+```bash
+python apple-log2linear.py -h
+```
 
 The data is saved to 3 folders inside the generated `tmp` folder:
 * `images` - 8 bit gamma corrected and clipped for COLMAP etc
