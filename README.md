@@ -33,6 +33,7 @@ Go to `Settings->Camera->Formats` and at the bottom turn on Apple ProRes and sel
 
 
 ## Recommended steps for improved radiometry
+I recommend using the Blackmagic camera app for more manual control over each camera setting, but these recommended steps assume the default iPhone camera app is being used:
 * Use the 0.5x ultrawide camera with locked auto exposure and locked auto focus while underexposing to prevent motion blur. To do this, hold down on the screen when the camera app is open and the `AE/AF` will lock, which locks the auto exposure and auto focus. Unfortunately it is not possible to lock one of focus or exposure, they both have to be locked. Using the 0.5x ultrawide camera has the largest depth of field which helps prevent being out of focus when locking. Scrolling down on the exposure slider will decrease motion blur by shortening exposure. I find it beneficial to deliberately underexpose for most scenes, there is usually enough signal and it decreases motion blur. 
 * Turn on `Lock Camera` and `Lock White Balance` in `Settings->Camera->Record Video`
 * Turn on `Lens Correction` in `Settings->Camera` for undistortion
