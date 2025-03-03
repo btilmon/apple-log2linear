@@ -9,7 +9,7 @@ Apple ProRes Log video format captures minimally processed 10 bit HDR video up t
 ## Applications
 
 <p align="center">Bypass Apple's computational photography for improved radiometry:</p>
-<p align="center">(less denoising, sharpening, color correction, and other undocumented processing), zoom in for details</p>
+<p align="center">(less tonemapping, denoising, sharpening, color correction, and other undocumented processing), zoom in for details</p>
 
 <p align="center">
   <img src="assets/processing.png" />
