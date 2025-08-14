@@ -6,21 +6,6 @@
 
 Apple ProRes Log video format captures minimally processed 10 bit HDR video up to 4K 30FPS on iPhone 15 and 16 Pros. The videos are radiometrically and geometrically calibrated by Apple on device. This makes ProRes Log video one of the easiest ways to get film quality calibrated video for photogrammetry, radiance fields, VFX, and so on without needing a full frame camera and manual calibrations. Apple promises that after decoding from log to linear, the image values represent linear scene reflectance, which is usually hard to get on iPhones due to all the computational photography processing. This repo implements the log to linear decoding based on the [Apple Log Profile White Paper](Apple_Log_Profile_White_Paper.pdf).
 
-## Applications
-
-<p align="center">Bypass Apple's computational photography for improved radiometry:</p>
-<p align="center">(less tonemapping, denoising, sharpening, color correction, and other undocumented processing), zoom in for details</p>
-
-<p align="center">
-  <img src="assets/processing.png" />
-</p>
-
-
-<p align="center">HDR imaging:</p>
-<p align="center">
-  <img src="assets/hdr.png" alt="HDR Image">
-</p>
-
 ## Radiometric Linearity Test
 
 After decoding the log images to linear, the image intensity should increase linearly based on the exposure ratio. For example, if the exposure is increased from 1 second to 2 seconds, the average image intensity should increase 2x. This was tested by setting the first GT value to the first real average image intensity, and then multiplying it by the known exposure ratio for each exposure. The real image intensities at each exposure are then compared to this GT to test if the decoded linear images are actually linear. The following plot suggests strong linearity of the decoded linear images.
