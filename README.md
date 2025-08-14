@@ -23,7 +23,7 @@ Apple ProRes Log video format captures minimally processed 10 bit HDR video up t
 
 ## Radiometric Linearity Test
 
-After decoding the log images to linear, the image intensity should increase linearly based on the exposure ratio. For example, if the exposure is increase from 1 second to 2 seconds, the average image intensity should increase 2x. This was tested by setting the first GT value to the first real average image intensity, and then multiplying it by the known exposure ratio for each exposure. The real image intensities at each exposure are then compared to this GT to test if the decoded linear images are actually linear. The following plot suggests strong linearity of the decoded linear images.
+After decoding the log images to linear, the image intensity should increase linearly based on the exposure ratio. For example, if the exposure is increased from 1 second to 2 seconds, the average image intensity should increase 2x. This was tested by setting the first GT value to the first real average image intensity, and then multiplying it by the known exposure ratio for each exposure. The real image intensities at each exposure are then compared to this GT to test if the decoded linear images are actually linear. The following plot suggests strong linearity of the decoded linear images.
 
 <p align="center">
   <img src="assets/radiometric-linearity.png" width="500px"/>
